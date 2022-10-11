@@ -23,6 +23,8 @@ distribution.
 
 #include "tinyxml2.h"
 
+#include <filesystem>
+
 #include <new>		// yes, this one new style header, is in the Android SDK.
 #if defined(ANDROID_NDK) || defined(__BORLANDC__) || defined(__QNXNTO__)
 #   include <stddef.h>
@@ -2275,18 +2277,21 @@ XMLUnknown* XMLDocument::NewUnknown( const char* str )
     return unk;
 }
 
-static FILE* callfopen( const char* filepath, const char* mode )
+#if defined(WIN32)
+static FILE* callfopen( std::filesystem::path filepath, const wchar_t* mode )
+#else
+static FILE* callfopen( std::filesystem::path filepath, const char* mode )
+#endif
 {
-    TIXMLASSERT( filepath );
     TIXMLASSERT( mode );
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 ) && (!defined WINCE)
     FILE* fp = 0;
-    const errno_t err = fopen_s( &fp, filepath, mode );
+    const errno_t err = _wfopen_s(&fp, filepath.c_str(), mode);
     if ( err ) {
         return 0;
     }
 #else
-    FILE* fp = fopen( filepath, mode );
+    FILE* fp = fopen( filepath.c_str(), mode );
 #endif
     return fp;
 }
@@ -2309,18 +2314,16 @@ void XMLDocument::DeleteNode( XMLNode* node )	{
 }
 
 
-XMLError XMLDocument::LoadFile( const char* filename )
-{
-    if ( !filename ) {
-        TIXMLASSERT( false );
-        SetError( XML_ERROR_FILE_COULD_NOT_BE_OPENED, 0, "filename=<null>" );
-        return _errorID;
-    }
+XMLError XMLDocument::LoadFile(std::filesystem::path filename) {
 
     Clear();
-    FILE* fp = callfopen( filename, "rb" );
+#if defined(WIN32)
+    FILE* fp = callfopen( filename, L"rb" );
+#else
+    FILE* fp = callfopen(filename, "rb");
+#endif
     if ( !fp ) {
-        SetError( XML_ERROR_FILE_NOT_FOUND, 0, "filename=%s", filename );
+        SetError( XML_ERROR_FILE_NOT_FOUND, 0, "filename=%s", filename.c_str() );
         return _errorID;
     }
     LoadFile( fp );
@@ -2382,17 +2385,15 @@ XMLError XMLDocument::LoadFile( FILE* fp )
 }
 
 
-XMLError XMLDocument::SaveFile( const char* filename, bool compact )
-{
-    if ( !filename ) {
-        TIXMLASSERT( false );
-        SetError( XML_ERROR_FILE_COULD_NOT_BE_OPENED, 0, "filename=<null>" );
-        return _errorID;
-    }
+XMLError XMLDocument::SaveFile(std::filesystem::path filename, bool compact) {
 
-    FILE* fp = callfopen( filename, "w" );
+#if defined(WIN32)
+    FILE* fp = callfopen(filename, L"w");
+#else
+    FILE* fp = callfopen(filename, "w");
+#endif
     if ( !fp ) {
-        SetError( XML_ERROR_FILE_COULD_NOT_BE_OPENED, 0, "filename=%s", filename );
+        SetError( XML_ERROR_FILE_COULD_NOT_BE_OPENED, 0, "filename=%s", filename.c_str() );
         return _errorID;
     }
     SaveFile(fp, compact);

@@ -42,6 +42,8 @@ distribution.
 #endif
 #include <stdint.h>
 
+#include <filesystem>
+
 /*
    TODO: intern strings instead of allocation.
 */
@@ -1754,7 +1756,7 @@ public:
     	Returns XML_SUCCESS (0) on success, or
     	an errorID.
     */
-    XMLError LoadFile( const char* filename );
+    XMLError LoadFile(std::filesystem::path filename);
 
     /**
     	Load an XML file from disk. You are responsible
@@ -1774,7 +1776,7 @@ public:
     	Returns XML_SUCCESS (0) on success, or
     	an errorID.
     */
-    XMLError SaveFile( const char* filename, bool compact = false );
+    XMLError SaveFile(std::filesystem::path filename, bool compact = false);
 
     /**
     	Save the XML file to disk. You are responsible
